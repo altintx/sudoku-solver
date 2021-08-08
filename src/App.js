@@ -3,7 +3,14 @@ import './App.css';
 import './Block.css';
 
 function cellFactory(value, candidates, block, row, col) {
-  return { value: value? value: "", block, row, col, candidates: value? [value]: candidates };
+  return {
+    value: value? value: "",
+    block, 
+    row, 
+    col, 
+    candidates: value? [value]: candidates,
+    is: (c) => c.block === block && c.row === row && c.col === col
+  };
 }
 
 function flatten(out, array) {
@@ -295,12 +302,12 @@ function Block({ number, grid, setGrid, setCell }) {
         const newGrid = grid.slice();
         newGrid[cellIndex] = cellFactory(
           value? parseInt(value, 10): null,
-          value? []: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+          value? [value]: [1, 2, 3, 4, 5, 6, 7, 8, 9],
           cell.block,
           cell.row,
           cell.col
         );
-        setGrid(newGrid);
+        if(value !== cell.value) setGrid(newGrid);
       }
       cols.push(<Cell key={`${cell.block}-${cell.row}-${cell.col}`} data={cell} value={cell.value} candidates={cell.candidates} block={number} row={row} col={col} onChange={f} onFocus={() => setCell(cell)} />)
     }
@@ -317,6 +324,34 @@ function Board({grid, setGrid, setCell}) {
   return <div className="grid">{blocks}</div>
 }
 
+function CellInspector({grid, cell, setGrid, setCell }) {
+  const toggleCandidate = (cell, candidate) => {
+    const newGrid = grid.slice().map(newCell => {
+      if (newCell === cell) {
+        const candidates = cell.candidates;
+        if(candidates.includes(candidate)) {
+          return cellFactory(cell.value, without(candidates, candidate), cell.block, cell.row, cell.col);
+        } else {
+          return cellFactory(cell.value, candidates.concat(candidate), cell.block, cell.row, cell.col);
+        }
+      } else {
+        return newCell
+      }
+    });
+    const newCell = newGrid.filter(newCell => cell.is(newCell))[0];
+    setGrid(newGrid);
+    setCell(newCell);
+  }
+  return cell? (<>
+    <h2>Cell Row {cell.row} Col {cell.col} Block {cell.block}</h2>
+    Possible: {[1,2,3,4,5,6,7,8,9].map(candidate => {
+      return <div key={candidate}>
+        <input type="checkbox" checked={cell.candidates.includes(candidate)} onChange={() => toggleCandidate(cell, candidate)} /><label>{candidate}</label>
+      </div>
+    })} {cell.candidates.join(", ")}
+  </>): null;
+}
+
 function App() {
   const [grid, setGrid] = useState(expertPuzzle())
   const [cell, setCell] = useState(null);
@@ -326,10 +361,7 @@ function App() {
         Sudoku Solver
       </header>
       <Board grid={grid} setGrid={setGrid} setCell={setCell} />
-      {cell && (<>
-        <h2>Cell Row {cell.row} Col {cell.col} Block {cell.block}</h2>
-        Possible: {cell.candidates.join(", ")}
-      </>)}
+      <CellInspector grid={grid} setGrid={setGrid} cell={cell} setCell={setCell} />
       <div className="actions">
         <button onClick={() => setGrid(hardPuzzle())}>Hard Puzzle</button>
         <button onClick={() => setGrid(expertPuzzle())}>Expert Puzzle</button>
