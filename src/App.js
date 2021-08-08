@@ -344,11 +344,11 @@ function CellInspector({grid, cell, setGrid, setCell }) {
   }
   return cell? (<>
     <h2>Cell Row {cell.row} Col {cell.col} Block {cell.block}</h2>
-    Possible: {[1,2,3,4,5,6,7,8,9].map(candidate => {
+    <div className="grid">{[1,2,3,4,5,6,7,8,9].map(candidate => {
       return <div key={candidate}>
-        <input type="checkbox" checked={cell.candidates.includes(candidate)} onChange={() => toggleCandidate(cell, candidate)} /><label>{candidate}</label>
+        <label><input type="checkbox" checked={cell.candidates.includes(candidate)} onChange={() => toggleCandidate(cell, candidate)} />{candidate}</label>
       </div>
-    })} {cell.candidates.join(", ")}
+    })}</div>
   </>): null;
 }
 
