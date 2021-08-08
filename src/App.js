@@ -2,13 +2,22 @@ import { useState } from 'react';
 import './App.css';
 import './Block.css';
 
+function logEntry(cell, action, reason, grid) {
+  return {
+    row: cell.row, 
+    col: cell.col,
+    action,
+    reason,
+    grid
+  }
+}
 function cellFactory(value, candidates, block, row, col) {
   return {
     value: value? value: "",
     block, 
     row, 
     col, 
-    candidates: value? [value]: candidates,
+    candidates: value? [value]: candidates.length? candidates: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     is: (c) => c.block === block && c.row === row && c.col === col
   };
 }
@@ -16,30 +25,38 @@ function cellFactory(value, candidates, block, row, col) {
 function flatten(out, array) {
   return out.concat(array);
 }
-function uniqueOnAVector(newGrid, cell, index, vector, prop) {
+function uniqueOnAVector(newGrid, cell, index, vector, prop, addLog) {
   let cont = true;
   // is a particular number a candidate in a single cell
   cell.candidates.forEach(candidate => {
     if(cont && !(vector(newGrid, cell[prop])
-      .filter(other => cell !== other)
+      .filter(other => !cell.is(other))
       .reduce((instances, other) => instances.concat(other.candidates), [])
       .filter(unique)
       .includes(candidate))
     ) {
-      newGrid[index] = cellFactory(candidate, [], cell.block, cell.row, cell.col);
+      if(!cell.value) {
+        // addLog(cell, `Assigned ${candidate}`, `${prop} ${cell[prop] + 1} only contains candidate ${candidate} in this cell`);
+        newGrid[index] = cellFactory(candidate, [], cell.block, cell.row, cell.col);
+      }
       cont = false;
     }
   });
   return cont;
 }
-function eliminateCandidates(other, grid, cell) {
-  dropCandidate(grid, other, cell.value);
+function eliminateCandidates(other, grid, cell, addLog) {
+  if(cell === other) return;
+  if(!cell.value) return;
+  dropCandidate(grid, other, cell.value, addLog);
 }
 
-function dropCandidate(grid, cell, candidate) {
+function dropCandidate(grid, cell, candidate, addLog) {
   const cellIndex = cell.block * 9 + (cell.row % 3) * 3 + (cell.col % 3);
   const existingCandidates = cell.candidates;
   const newCandidates = without(existingCandidates, candidate);
+  if(existingCandidates.length !== newCandidates.length) {
+    addLog(cell, `Removed candidate ${candidate}`)
+  }
   grid[cellIndex] = cellFactory(
     cell.value,
     newCandidates,
@@ -69,7 +86,7 @@ function unsolved(cell) {
 }
 function firstCellsInBlock(vector) {
   return vector
-    .filter((c, i, v) => c === v.filter(bc => bc.block === c.block)[0]);
+    .filter((c, _, v) => c === v.filter(bc => bc.block === c.block)[0]);
 }
 function candidatesOnVector(vector) {
   return vector
@@ -78,14 +95,18 @@ function candidatesOnVector(vector) {
     .reduce(flatten, [])
     .filter(unique);
 }
-function solver(grid, steps) {
+function solver(grid, steps, actions, setLog) {
+  const log = actions.slice();
   if (steps < 1) return grid;
+  const addLog = (cell, action, reason) => log.push(logEntry(cell, action, reason, newGrid));
   // any single candidates?
-  let newGrid = grid.map(cell => {
+  let newGrid = grid.slice();
+  newGrid = newGrid.map(cell => {
     if (!cell.value && cell.candidates.length === 1) {
+      addLog(cell, `Assigned ${cell.candidates[0]}`, "Last remaining candidate for cell");
       return cellFactory(
         cell.candidates[0],
-        [],
+        [cell.candidates[0]],
         cell.block, 
         cell.row, 
         cell.col
@@ -101,28 +122,27 @@ function solver(grid, steps) {
     }
   });
   // elim candidates in row 
-  newGrid.forEach(cell => {
-    row(newGrid, cell.row).forEach(other => eliminateCandidates(other, newGrid, cell));
-    col(newGrid, cell.col).forEach(other => eliminateCandidates(other, newGrid, cell));
-    block(newGrid, cell.block).forEach(other => eliminateCandidates(other, newGrid, cell));
-  });
   newGrid.forEach((cell, index) => {
-    uniqueOnAVector(newGrid, cell, index, row, 'row') && uniqueOnAVector(newGrid, cell, index, col, 'col') && uniqueOnAVector(newGrid, cell, index, block, 'block');
+    [[row, "row"], [col, "col"], [block, "block"]].map(([f, p]) => 
+      f(newGrid, cell[p]).forEach(other => eliminateCandidates(other, newGrid, cell, (cell, action) => addLog(cell, action, `Candidate was assigned elsewhere on ${p}`))))
+    uniqueOnAVector(newGrid, cell, index, row, 'row', addLog) &&
+    uniqueOnAVector(newGrid, cell, index, col, 'col', addLog) &&
+    uniqueOnAVector(newGrid, cell, index, block, 'block', addLog);
   });
   // TODO: Can this be expanded to three (triples)
   for(let rowIndex = 0; rowIndex < 9; rowIndex++) {
     const pairs = row(newGrid, rowIndex).filter(cell => cell.candidates.length === 2);
     pairs.forEach(cell => {
-      pairs.filter(pair => cell !== pair && pair.block === cell.block).forEach(pair => {
+      pairs.filter(pair => !cell.is(pair) && pair.block === cell.block).forEach(pair => {
         if(pair.candidates[0] === cell.candidates[0] && pair.candidates[1] === cell.candidates[1]) {
           // get all cells in block
           block(newGrid, cell.block)
             // exclude these 2
-            .filter(blockCell => cell !== blockCell && pair !== blockCell)
+            .filter(blockCell => !cell.is(blockCell) && !pair.is(blockCell))
             // remove these 2 candidates from other cells
             .forEach(c => {
-              dropCandidate(newGrid, c, pair.candidates[0]);
-              dropCandidate(newGrid, c, pair.candidates[1]);
+              dropCandidate(newGrid, c, pair.candidates[0], (cell, action) => addLog(cell, action, "Candidate is part of a pair on the row"));
+              dropCandidate(newGrid, c, pair.candidates[1], (cell, action) => addLog(cell, action, "Candidate is part of a pair on the row"));
             })
         }
       })
@@ -137,11 +157,11 @@ function solver(grid, steps) {
           // get all cells in block
           block(newGrid, cell.block)
             // exclude these 2
-            .filter(blockCell => cell !== blockCell && pair !== blockCell)
+            .filter(blockCell => !cell.is(blockCell) && !pair.is(blockCell))
             // remove these 2 candidates from other cells
             .forEach(c => {
-              dropCandidate(newGrid, c, pair.candidates[0]);
-              dropCandidate(newGrid, c, pair.candidates[1]);
+              dropCandidate(newGrid, c, pair.candidates[0], (cell, action) => addLog(cell, action, "Candidate is part of a pair on the col"));
+              dropCandidate(newGrid, c, pair.candidates[1], (cell, action) => addLog(cell, action, "Candidate is part of a pair on the col"));
             })         
         }
       })
@@ -157,12 +177,14 @@ function solver(grid, steps) {
         const possibilitiesInBlock = block(newGrid, cell.block)
           .filter(blockCell => blockCell.candidates.includes(candidate));
         if(possibilitiesInBlock.every(blockCell => blockCell.row === cell.row)) {
-          console.log(`${candidate} in row ${ixRow} must be in block ${cell.block}`);
+          // console.log(`${candidate} in row ${ixRow} must be in block ${cell.block}`);
           cells
             .filter(c => c.block !== cell.block)
             .forEach(c => {
-              dropCandidate(newGrid, c, candidate);
-              dropCandidate(newGrid, c, candidate);
+              if(c.candidates.includes(candidate)) {
+                addLog(c, `Removed candidate ${candidate}`, `${candidate} in row ${ixRow + 1} must in block ${cell.block + 1}`)
+                dropCandidate(newGrid, c, candidate, () => {});
+              }
             })
         }
       })
@@ -175,17 +197,20 @@ function solver(grid, steps) {
         const possibilitiesInBlock = block(newGrid, cell.block)
           .filter(blockCell => blockCell.candidates.includes(candidate));
         if(possibilitiesInBlock.every(blockCell => blockCell.col === cell.col)) {
-          console.log(`${candidate} in col ${ixCol} must be in block ${cell.block}`);
+          // console.log(`${candidate} in col ${ixCol} must be in block ${cell.block}`);
           cells
             .filter(c => c.block !== cell.block)
             .forEach(c => {
-              dropCandidate(newGrid, c, candidate);
-              dropCandidate(newGrid, c, candidate);
+              if(c.candidates.includes(candidate)) {
+                addLog(c, `Removed candidate ${candidate}`, `${candidate} in column ${ixCol + 1} must in block ${cell.block + 1}`)
+                dropCandidate(newGrid, c, candidate, addLog);
+              }
             })
         }
       })
     })
   }
+  setLog(log);
   return newGrid;
 }
 
@@ -342,8 +367,9 @@ function CellInspector({grid, cell, setGrid, setCell }) {
     setGrid(newGrid);
     setCell(newCell);
   }
+  const index = grid.indexOf(cell);
   return cell? (<>
-    <h2>Cell Row {cell.row} Col {cell.col} Block {cell.block}</h2>
+    <h2>Cell Row {cell.row + 1} Col {cell.col + 1} Block {cell.block + 1} Index {index}</h2>
     <div className="grid">{[1,2,3,4,5,6,7,8,9].map(candidate => {
       return <div key={candidate}>
         <label><input type="checkbox" checked={cell.candidates.includes(candidate)} onChange={() => toggleCandidate(cell, candidate)} />{candidate}</label>
@@ -355,19 +381,41 @@ function CellInspector({grid, cell, setGrid, setCell }) {
 function App() {
   const [grid, setGrid] = useState(expertPuzzle())
   const [cell, setCell] = useState(null);
+  const [log, setLog] = useState([]);
   return (
     <div className="App">
       <header className="App-header">
         Sudoku Solver
       </header>
-      <Board grid={grid} setGrid={setGrid} setCell={setCell} />
-      <CellInspector grid={grid} setGrid={setGrid} cell={cell} setCell={setCell} />
+      <Board grid={grid} setGrid={setGrid} setCell={setCell} log={log} setLog={setLog} />
+      <CellInspector grid={grid} setGrid={setGrid} cell={cell} setCell={setCell} log={log} setLog={setLog} />
       <div className="actions">
-        <button onClick={() => setGrid(hardPuzzle())}>Hard Puzzle</button>
-        <button onClick={() => setGrid(expertPuzzle())}>Expert Puzzle</button>
-        <button onClick={() => setGrid(defaultGrid())}>Blank Puzzle</button>
-        <button onClick={() => setGrid(solver(grid, 1 ))}>Next Step (Hint)</button>
+        <button onClick={() => { setLog([]); }}>Clear Log</button>
+        <button onClick={() => { setLog([]); setGrid(hardPuzzle()) }}>Hard Puzzle</button>
+        <button onClick={() => { setLog([]); setGrid(expertPuzzle()) }}>Expert Puzzle</button>
+        <button onClick={() => { setLog([]); setGrid(defaultGrid()) }}>Blank Puzzle</button>
+        <button onClick={() => { setGrid(solver(grid, 1, log, setLog)) }}>Next Step (Hint)</button>
       </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Row</th>
+            <th>Col</th>
+            <th>Action</th>
+            <th>Reason</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {log.map((event, i) => <tr key={i}>
+            <td>{event.row + 1}</td>
+            <td>{event.col + 1}</td>
+            <td>{event.action}</td>
+            <td>{event.reason}</td>
+            <td><button onClick={() => setGrid(event.grid)}>Restore</button></td>
+          </tr>)}
+        </tbody>
+      </table>
     </div>
   );
 }
