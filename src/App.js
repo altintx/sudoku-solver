@@ -141,8 +141,8 @@ function solver(grid, steps, actions, setLog) {
             .filter(blockCell => !cell.is(blockCell) && !pair.is(blockCell))
             // remove these 2 candidates from other cells
             .forEach(c => {
-              dropCandidate(newGrid, c, pair.candidates[0], (cell, action) => addLog(cell, action, "Candidate is part of a pair on the row"));
-              dropCandidate(newGrid, c, pair.candidates[1], (cell, action) => addLog(cell, action, "Candidate is part of a pair on the row"));
+              dropCandidate(newGrid, c, pair.candidates[0], (cell, action) => { debugger; addLog(cell, action, "Candidate is part of a pair on the row") });
+              dropCandidate(newGrid, c, pair.candidates[1], (cell, action) => { debugger; addLog(cell, action, "Candidate is part of a pair on the row") });
             })
         }
       })
@@ -152,7 +152,7 @@ function solver(grid, steps, actions, setLog) {
   for(let colIndex = 0; colIndex < 9; colIndex++) {
     const pairs = col(newGrid, colIndex).filter(cell => cell.candidates.length === 2);
     pairs.forEach(cell => {
-      pairs.filter(pair => cell !== pair && pair.block === cell.block).forEach(pair => {
+      pairs.filter(pair => !cell.is(pair) && pair.block === cell.block).forEach(pair => {
         if(pair.candidates[0] === cell.candidates[0] && pair.candidates[1] === cell.candidates[1]) {
           // get all cells in block
           block(newGrid, cell.block)
@@ -203,7 +203,7 @@ function solver(grid, steps, actions, setLog) {
             .forEach(c => {
               if(c.candidates.includes(candidate)) {
                 addLog(c, `Removed candidate ${candidate}`, `${candidate} in column ${ixCol + 1} must in block ${cell.block + 1}`)
-                dropCandidate(newGrid, c, candidate, addLog);
+                dropCandidate(newGrid, c, candidate, () => {});
               }
             })
         }
@@ -368,7 +368,7 @@ function CellInspector({grid, cell, setGrid, setCell }) {
     setCell(newCell);
   }
   const index = grid.indexOf(cell);
-  return cell? (<>
+  return index > -1 && cell? (<>
     <h2>Cell Row {cell.row + 1} Col {cell.col + 1} Block {cell.block + 1} Index {index}</h2>
     <div className="grid">{[1,2,3,4,5,6,7,8,9].map(candidate => {
       return <div key={candidate}>
