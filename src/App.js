@@ -25,7 +25,8 @@ export function cellFactory(value, candidates, block, row, col) {
     row, 
     col, 
     candidates: value? [value]: candidates.length? candidates: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-    is: (c) => c.block === block && c.row === row && c.col === col
+    is: (c) => c.block === block && c.row === row && c.col === col,
+    unchanged: function(c) { return c.is(this) && c.value === this.value && c.candidates.length === this.candidates.length }
   };
 }
 
@@ -84,7 +85,19 @@ const gridSort = (a, b) => {
     return 0;
   }
 }
+function brute(grid, steps, actions, setLog) {
+  alert("TODO: Build brute force algo")
+  while(grid.filter(unsolved) > 0) {
+    // let working = grid.map(cell => {
+    //   c.value = c.candidates[0];
+    //   c.candidates = [c.value];
 
+    //   row(grid, cell.row).filter(c => cell !== c).forEach(c => c.candidates = without(c.candidates, cell.value));
+    //   col(grid, cell.col).filter(c => cell !== c).forEach(c => c.candidates = without(c.candidates, cell.value))
+    //   block(grid, cell.block).filter(c => cell !== c).forEach(c => c.candidates = without(c.candidates, cell.value))
+    // })
+  }
+}
 function solver(grid, steps, actions, setLog) {
   const log = actions.slice();
   if (steps < 1) return grid;
@@ -103,9 +116,15 @@ function solver(grid, steps, actions, setLog) {
       flatten,
       unique,
     })
-  }, newGrid)
-  setLog(log);
-  return newGrid;
+  }, newGrid);
+  if(newGrid.every((cell, i) => grid[i].unchanged(cell))) {
+    if(window.confirm("Couldn't deduce next step. Brute force?")) {
+      brute(grid, steps, actions, setLog);
+    }
+  } else {
+    console.log(newGrid.filter((cell, i) => !grid[i].unchanged(cell)));
+  }
+  return { grid: newGrid, log };
 }
 
 
@@ -130,7 +149,7 @@ function App() {
             <button onClick={() => { setLog([]); setGrid(hardPuzzle(gridUtilities)) }}>Hard Puzzle</button>
             <button onClick={() => { setLog([]); setGrid(expertPuzzle(gridUtilities)) }}>Expert Puzzle</button>
             <button onClick={() => { setLog([]); setGrid(blankPuzzle(gridUtilities)) }}>Blank Puzzle</button>
-            <button onClick={() => { setGrid(solver(grid, 1, log, setLog)) }}>Next Step (Hint)</button>
+            <button onClick={() => { const { log: newLog, grid: newGrid } = solver(grid, 1, log, setLog); setGrid(newGrid); setLog(newLog); }}>Next Step (Hint)</button>
           </div>
           <LogTable cell={cell} setGrid={setGrid} grid={grid} log={log} />
         </div>
