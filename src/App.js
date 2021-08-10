@@ -99,7 +99,7 @@ function brute(grid, steps, actions, setLog) {
   }
 }
 function solver(grid, steps, actions, setLog) {
-  const log = actions.slice();
+  const newLog = actions.slice();
   if (steps < 1) return grid;
   // any single candidates?
   let newGrid = grid.slice();
@@ -107,7 +107,7 @@ function solver(grid, steps, actions, setLog) {
     return strategy({
       grid: newGrid,
       cellFactory,
-      addLog: (cell, action, reason) => log.push(logEntry(cell, strategy.name, action, reason, newGrid)),
+      addLog: (cell, action, reason) => newLog.push(logEntry(cell, strategy.name, action, reason, newGrid)),
       row,
       col,
       block,
@@ -124,7 +124,7 @@ function solver(grid, steps, actions, setLog) {
   } else {
     console.log(newGrid.filter((cell, i) => !grid[i].unchanged(cell)));
   }
-  return { grid: newGrid, log };
+  return { newGrid, newLog };
 }
 
 
@@ -149,7 +149,7 @@ function App() {
             <button onClick={() => { setLog([]); setGrid(hardPuzzle(gridUtilities)) }}>Hard Puzzle</button>
             <button onClick={() => { setLog([]); setGrid(expertPuzzle(gridUtilities)) }}>Expert Puzzle</button>
             <button onClick={() => { setLog([]); setGrid(blankPuzzle(gridUtilities)) }}>Blank Puzzle</button>
-            <button onClick={() => { const { log: newLog, grid: newGrid } = solver(grid, 1, log, setLog); setGrid(newGrid); setLog(newLog); }}>Next Step (Hint)</button>
+            <button onClick={() => { const { newLog, newGrid } = solver(grid, 1, log, setLog); setGrid(newGrid); setLog(newLog); }}>Next Step (Hint)</button>
           </div>
           <LogTable cell={cell} setGrid={setGrid} grid={grid} log={log} />
         </div>
