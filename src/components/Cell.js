@@ -1,6 +1,6 @@
 export function Cell({ value, candidates, onChange, onFocus, }) {
   const classes = {
-    1: "white",
+    1: "blue",
     2: "green",
     3: "yellow",
     4: "white",
@@ -11,5 +11,5 @@ export function Cell({ value, candidates, onChange, onFocus, }) {
     9: "white",
     0: "red"
   };
-  return <div className={classes[candidates.length] + " cell"}><input value={value} onChange={onChange} onFocus={onFocus} /></div>;
+  return <div className={classes[candidates.length] + " cell"}><input value={value} onChange={onChange} onFocus={onFocus} onClick={({target}) => target.select()} /></div>;
 }

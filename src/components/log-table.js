@@ -1,22 +1,33 @@
-export default function logTable({ log, cell, setGrid }) {
+export default function logTable({ log, cell, grid, setGrid }) {
     return <table>
         <thead>
           <tr>
             <th>Row</th>
             <th>Col</th>
+            <th>Detective</th>
             <th>Action</th>
             <th>Reason</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          {log.map((event, i) => <tr key={i}>
+          {grid.includes(cell) && log.filter(entry => entry.row === cell.row && entry.col === cell.col).map((event, i) => <tr key={i}>
             <td>{event.row + 1}</td>
             <td>{event.col + 1}</td>
+            <td>{event.strategy}</td>
             <td>{event.action}</td>
             <td>{event.reason}</td>
             <td><button onClick={() => setGrid(event.grid)}>Restore</button></td>
           </tr>)}
+          {!grid.includes(cell) && log.map((event, i) => <tr key={i}>
+            <td>{event.row + 1}</td>
+            <td>{event.col + 1}</td>
+            <td>{event.strategy}</td>
+            <td>{event.action}</td>
+            <td>{event.reason}</td>
+            <td><button onClick={() => setGrid(event.grid)}>Restore</button></td>
+          </tr>)}
+
         </tbody>
       </table>
 }

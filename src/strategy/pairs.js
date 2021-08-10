@@ -12,8 +12,8 @@ export default function pairs({ grid, row, block, addLog, col, dropCandidate }) 
             .filter(blockCell => !cell.is(blockCell) && !pair.is(blockCell))
             // remove these 2 candidates from other cells
             .forEach(c => {
-              dropCandidate(newGrid, c, pair.candidates[0], (cell, action) => { debugger; addLog(cell, action, "Candidate is part of a pair on the row") });
-              dropCandidate(newGrid, c, pair.candidates[1], (cell, action) => { debugger; addLog(cell, action, "Candidate is part of a pair on the row") });
+              dropCandidate(newGrid, c, pair.candidates[0], (cell, action) => { addLog(cell, action, "Candidate is part of a pair on the row") });
+              dropCandidate(newGrid, c, pair.candidates[1], (cell, action) => { addLog(cell, action, "Candidate is part of a pair on the row") });
             })
         }
       })

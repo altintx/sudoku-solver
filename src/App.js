@@ -8,13 +8,14 @@ import './App.css';
 import { Board } from './components/Board';
 import { CellInspector } from './components/CellInspector';
 
-function logEntry(cell, action, reason, grid) {
+function logEntry(cell, strategy, action, reason, grid) {
   return {
     row: cell.row, 
     col: cell.col,
     action,
     reason,
-    grid
+    grid,
+    strategy
   }
 }
 export function cellFactory(value, candidates, block, row, col) {
@@ -87,14 +88,13 @@ const gridSort = (a, b) => {
 function solver(grid, steps, actions, setLog) {
   const log = actions.slice();
   if (steps < 1) return grid;
-  const addLog = (cell, action, reason) => log.push(logEntry(cell, action, reason, newGrid));
   // any single candidates?
   let newGrid = grid.slice();
   newGrid = strategies.reduce((newGrid, strategy) => {
     return strategy({
       grid: newGrid,
       cellFactory,
-      addLog,
+      addLog: (cell, action, reason) => log.push(logEntry(cell, strategy.name, action, reason, newGrid)),
       row,
       col,
       block,
@@ -119,16 +119,22 @@ function App() {
       <header className="App-header">
         Sudoku Solver
       </header>
-      <Board grid={grid} setGrid={setGrid} setCell={setCell} log={log} setLog={setLog} />
-      <CellInspector grid={grid} setGrid={setGrid} cell={cell} setCell={setCell} log={log} setLog={setLog} />
-      <div className="actions">
-        <button onClick={() => { setLog([]); }}>Clear Log</button>
-        <button onClick={() => { setLog([]); setGrid(hardPuzzle(gridUtilities)) }}>Hard Puzzle</button>
-        <button onClick={() => { setLog([]); setGrid(expertPuzzle(gridUtilities)) }}>Expert Puzzle</button>
-        <button onClick={() => { setLog([]); setGrid(blankPuzzle(gridUtilities)) }}>Blank Puzzle</button>
-        <button onClick={() => { setGrid(solver(grid, 1, log, setLog)) }}>Next Step (Hint)</button>
+      <div style={{display:"flex", flexDirection: "row"}}>
+        <div style={{flex:"1"}}>
+          <Board grid={grid} setGrid={setGrid} setCell={setCell} log={log} setLog={setLog} />
+        </div>
+        <div style={{flex:"1"}}>
+          <CellInspector grid={grid} setGrid={setGrid} cell={cell} setCell={setCell} log={log} setLog={setLog} />
+          <div className="actions">
+            <button onClick={() => { setLog([]); }}>Clear Log</button>
+            <button onClick={() => { setLog([]); setGrid(hardPuzzle(gridUtilities)) }}>Hard Puzzle</button>
+            <button onClick={() => { setLog([]); setGrid(expertPuzzle(gridUtilities)) }}>Expert Puzzle</button>
+            <button onClick={() => { setLog([]); setGrid(blankPuzzle(gridUtilities)) }}>Blank Puzzle</button>
+            <button onClick={() => { setGrid(solver(grid, 1, log, setLog)) }}>Next Step (Hint)</button>
+          </div>
+          <LogTable cell={cell} setGrid={setGrid} grid={grid} log={log} />
+        </div>
       </div>
-      <LogTable cell={cell} setGrid={setGrid} log={log} />
     </div>
   );
 }

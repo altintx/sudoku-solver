@@ -19,24 +19,26 @@
   gap: 0px 0px; 
   border: 1px solid black;
   grid-template-areas: 
-      ". . ."
-      ". . ."
-      ". . ."; 
-  width: 99%; 
-  height: 99%; 
+      "..."
+      "..."
+      "..."; 
+  width: 100%; 
+  height: 100%; 
 }
 
 .grid > .cell {
   border: 1px solid black;
-  outline: none;
+  width: 3em;
+  height: 3em;
 }
 
 .grid input {
   border-width: 0;
   outline: none;
-  width: 100%;
-  text-align: center;
-  font-size: 1.5em;
+  width: 2em;
+  text-align: left;
+  font-size: 2em;
+  padding-left: 0.5em;
 }
 
 .green {
@@ -49,6 +51,9 @@
   background-color: #faa;
 }
 
+.blue {
+  background-color: #eef;
+}
 .cell input {
   background-color: transparent;
 }
