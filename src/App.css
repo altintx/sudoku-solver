@@ -1,12 +1,6 @@
 .App {
   text-align: center;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
 .App-header {
   background-color: #282c34;
   min-height: 10vh;
@@ -18,15 +12,47 @@
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.grid {
+  display: grid; 
+  grid-template-columns: 1fr 1fr 1fr; 
+  grid-template-rows: 1fr 1fr 1fr; 
+  gap: 0px 0px; 
+  border: 1px solid black;
+  grid-template-areas: 
+      ". . ."
+      ". . ."
+      ". . ."; 
+  width: 99%; 
+  height: 99%; 
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.grid > .cell {
+  border: 1px solid black;
+  outline: none;
+}
+
+.grid input {
+  border-width: 0;
+  outline: none;
+  width: 100%;
+  text-align: center;
+  font-size: 1.5em;
+}
+
+.green {
+  background-color: #afa;
+}
+.yellow {
+  background-color: #ffa;
+}
+.red {
+  background-color: #faa;
+}
+
+.cell input {
+  background-color: transparent;
+}
+
+.cell.updated {
+  border: 1px solid red;
 }
