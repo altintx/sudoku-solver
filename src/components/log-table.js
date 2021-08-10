@@ -2,8 +2,10 @@ export default function logTable({ log, cell, grid, setGrid }) {
     return <table>
         <thead>
           <tr>
-            <th>Row</th>
-            <th>Col</th>
+            {!grid.includes(cell) && (
+              <><th>Row</th>
+              <th>Col</th></>
+            )}
             <th>Detective</th>
             <th>Action</th>
             <th>Reason</th>
@@ -12,14 +14,12 @@ export default function logTable({ log, cell, grid, setGrid }) {
         </thead>
         <tbody>
           {grid.includes(cell) && log.filter(entry => entry.row === cell.row && entry.col === cell.col).map((event, i) => <tr key={i}>
-            <td>{event.row + 1}</td>
-            <td>{event.col + 1}</td>
             <td>{event.strategy}</td>
             <td>{event.action}</td>
             <td>{event.reason}</td>
             <td><button onClick={() => setGrid(event.grid)}>Restore</button></td>
           </tr>)}
-          {!grid.includes(cell) && log.map((event, i) => <tr key={i}>
+          {!grid.includes(cell) && log.map((event, i) => <tr key={"row-header" + i}>
             <td>{event.row + 1}</td>
             <td>{event.col + 1}</td>
             <td>{event.strategy}</td>
