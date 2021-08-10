@@ -1,6 +1,6 @@
 import { dropCandidate, unique, cellFactory, row, col, block } from '../App';
 
-function __uniqueOnAVector(newGrid, cell, index, vector, prop, addLog) {
+export function __uniqueOnAVector(newGrid, cell, index, vector, prop, addLog) {
   let cont = true;
   // is a particular number a candidate in a single cell
   cell.candidates.forEach(candidate => {

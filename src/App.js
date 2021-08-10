@@ -7,6 +7,7 @@ import LogTable from './components/log-table';
 import './App.css';
 import { Board } from './components/Board';
 import { CellInspector } from './components/CellInspector';
+import {__uniqueOnAVector} from './strategy/unique-on-vector';
 
 function logEntry(cell, strategy, action, reason, grid) {
   return {
@@ -19,6 +20,14 @@ function logEntry(cell, strategy, action, reason, grid) {
   }
 }
 export function cellFactory(value, candidates, block, row, col) {
+  if (value && typeof value === "object" && "value" in value) {
+    col = value.col;
+    candidates = value.candidates;
+    block = value.block;
+    row = value.row;
+    col = value.col;  
+    value = value.value;
+  }
   return {
     value: value? value: "",
     block, 
@@ -86,8 +95,50 @@ const gridSort = (a, b) => {
   }
 }
 function brute(grid, steps, actions, setLog) {
-  alert("TODO: Build brute force algo")
+  // const permutations = [];
+  const grids = [grid.map(c => cellFactory(c))];
+  let solution = [];
+  for(let attempt = 0; attempt < grids.length; attempt++) {
+    const permutations = grid.filter(unsolved);
+    permutations.forEach((cell, i, permutations) => {
+      cell.candidates.forEach((candidate, ixCandidate) => {
+        const scratch = grids[grids.length - 1].map(c => cellFactory(c));
+        const newCell = scratch.filter(c => c.is(cell))[0]
+        const newRow = row(scratch, cell.row);
+        if(newRow.filter(c => !cell.is(c)).map(c => { c.candidates = without(c.candidates, candidate); return c; }).filter(cell => cell.candidates > 0).length === 0) {
+          return;
+        }
+        const newCol = col(scratch, cell.col);
+        if(newCol.filter(c => !cell.is(c)).map(c => { c.candidates = without(c.candidates, candidate); return c; }).filter(cell => cell.candidates > 0).length === 0) {
+          return;
+        }
+        const newBlock = block(scratch, cell.block);
+        if(newBlock.filter(c => !cell.is(c)).map(c => { c.candidates = without(c.candidates, candidate); return c; }).filter(cell => cell.candidates > 0).length === 0) {
+          return;
+        }
+      
+        newCell.value = candidate; 
+        newCell.candidates = [candidate];
+        if(i === permutations.length - 1) {
+          // found it!
+          if(scratch.every((c, i) => __uniqueOnAVector(scratch, c, i, row, 'row', () => {})) &&
+            scratch.every((c, i) => __uniqueOnAVector(scratch, c, i, col, 'col', () => {})) &&
+            scratch.every((c, i) => __uniqueOnAVector(scratch, c, i, block, 'block', () => {}))) {
+            solution = scratch;
+          } else {
+            delete grids[grids.indexOf(scratch)];
+            return;
+          }
+          
+        } else {
+          grids.push(scratch);
+        }
+      })
+    })
+  }
+  return { newGrid: solution, newLog: actions };
   while(grid.filter(unsolved) > 0) {
+    break;
     // let working = grid.map(cell => {
     //   c.value = c.candidates[0];
     //   c.candidates = [c.value];
@@ -119,7 +170,7 @@ function solver(grid, steps, actions, setLog) {
   }, newGrid);
   if(newGrid.every((cell, i) => grid[i].unchanged(cell))) {
     if(window.confirm("Couldn't deduce next step. Brute force?")) {
-      brute(grid, steps, actions, setLog);
+      return brute(grid, steps, actions, setLog);
     }
   } else {
     console.log(newGrid.filter((cell, i) => !grid[i].unchanged(cell)));
