@@ -1,4 +1,4 @@
-export default function blankPuzzle(cellFactory) {
+export default function blankPuzzle({cellFactory}) {
     const grid = [];
     for(let block = 0; block < 9; block++) {
       for(let row = 0; row < 3; row++) {

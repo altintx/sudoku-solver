@@ -77,6 +77,34 @@ export function unique(v, i, a) {
 export function unsolved(cell) {
   return cell.candidates.length > 1;
 }
+function compare(expected, actual) {
+  let array1 = expected.slice()
+  let array2 = actual.slice()
+  return array1.length === array2.length && array1.sort().every(function (value, index) { return value === array2.sort()[index] });
+}
+function isSolved(board) {
+  let expected = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+  let valid = true
+  // Check all rows
+  for (let r = 0; r < 9 && valid == true; r++) {
+      if (!compare(expected, row(board, r).map(cell => cell.value) )) {
+          valid = false
+      }
+  }
+  // Check all columns
+  for (let c = 0; c < 9 && valid == true; c++) {
+      if (!compare(expected, col(board, c).map(cell => cell.value))) {
+          valid = false
+      }
+  }
+  // Check all quadrants
+  for (let q = 1; q < 9 && valid == true; q++) {
+      if (!compare(expected, block(board, q).map(cell => cell.value))) {
+          valid = false
+      }
+  }
+  return valid
+}
 const gridSort = (a, b) => {
   if(a.block < b.block) {
     return -1;
@@ -94,60 +122,65 @@ const gridSort = (a, b) => {
     return 0;
   }
 }
+function forPrintSort(a,b) {
+  if(a.row < b.row) return -1;
+  if(b.row < a.row) return 1;
+  if(a.col < b.col) return -1;
+  if(b.col < a.col) return 1;
+  return 0;
+}
+let attempts = 0;
 function brute(grid, steps, actions, setLog) {
-  // const permutations = [];
-  const grids = [grid.map(c => cellFactory(c))];
-  let solution = [];
-  for(let attempt = 0; attempt < grids.length; attempt++) {
-    const permutations = grid.filter(unsolved);
-    permutations.forEach((cell, i, permutations) => {
-      cell.candidates.forEach((candidate, ixCandidate) => {
-        const scratch = grids[grids.length - 1].map(c => cellFactory(c));
-        const newCell = scratch.filter(c => c.is(cell))[0]
-        const newRow = row(scratch, cell.row);
-        if(newRow.filter(c => !cell.is(c)).map(c => { c.candidates = without(c.candidates, candidate); return c; }).filter(cell => cell.candidates > 0).length === 0) {
-          return;
-        }
-        const newCol = col(scratch, cell.col);
-        if(newCol.filter(c => !cell.is(c)).map(c => { c.candidates = without(c.candidates, candidate); return c; }).filter(cell => cell.candidates > 0).length === 0) {
-          return;
-        }
-        const newBlock = block(scratch, cell.block);
-        if(newBlock.filter(c => !cell.is(c)).map(c => { c.candidates = without(c.candidates, candidate); return c; }).filter(cell => cell.candidates > 0).length === 0) {
-          return;
-        }
-      
+  attempts++;
+  if(attempts % 1000 === 0) {
+    const cells = (grid.sort(forPrintSort).map(cell => (cell.value || " ").toString()).join(""))
+    for(let j = 0; j < cells.length; j += 9) {
+      console.log(cells.substr(j,9));
+    }
+    debugger;
+  }
+  for(let ixCell = 0; ixCell < grid.length; ixCell++) {
+    if(!grid[ixCell].value) {
+      const newCell = cellFactory(grid[ixCell]);
+      const all = newCell.candidates;
+      let candidate = 0;
+      for(let i = 0; i < all.length; i++) {
+        const newGrid = grid.map(c => cellFactory(c));
+        candidate = all[i];
         newCell.value = candidate; 
         newCell.candidates = [candidate];
-        if(i === permutations.length - 1) {
-          // found it!
-          if(scratch.every((c, i) => __uniqueOnAVector(scratch, c, i, row, 'row', () => {})) &&
-            scratch.every((c, i) => __uniqueOnAVector(scratch, c, i, col, 'col', () => {})) &&
-            scratch.every((c, i) => __uniqueOnAVector(scratch, c, i, block, 'block', () => {}))) {
-            solution = scratch;
+        newGrid[ixCell] = newCell;
+        // console.log(`setting (${newCell.row+1},${newCell.col+1}) to ${newCell.value}`);
+        row(newGrid, newCell.row)
+          .filter(c => !c.is(newCell))
+          .forEach(cell => cell.candidates = without(cell.candidates, candidate));
+        col(newGrid, newCell.col)
+          .filter(c => !c.is(newCell))
+          .forEach(cell => cell.candidates = without(cell.candidates, candidate));
+        block(newGrid, newCell.block)
+          .filter(c => !c.is(newCell))
+          .forEach(cell => cell.candidates = without(cell.candidates, candidate));
+        if(newGrid.every(cell => cell.candidates.length > 0)) {
+          if(newGrid.every(cell => cell.value)) {
+            if (isSolved(newGrid)) {
+              return newGrid;
+            } else {
+              return false;
+            }
           } else {
-            delete grids[grids.indexOf(scratch)];
-            return;
+              // flush out additional cells
+              const try2 = brute(newGrid);
+              if(try2) return try2;
           }
-          
         } else {
-          grids.push(scratch);
+          // impossible puzzle, backtrack
+          return false;
         }
-      })
-    })
+      }
+    }
   }
-  return { newGrid: solution, newLog: actions };
-  while(grid.filter(unsolved) > 0) {
-    break;
-    // let working = grid.map(cell => {
-    //   c.value = c.candidates[0];
-    //   c.candidates = [c.value];
-
-    //   row(grid, cell.row).filter(c => cell !== c).forEach(c => c.candidates = without(c.candidates, cell.value));
-    //   col(grid, cell.col).filter(c => cell !== c).forEach(c => c.candidates = without(c.candidates, cell.value))
-    //   block(grid, cell.block).filter(c => cell !== c).forEach(c => c.candidates = without(c.candidates, cell.value))
-    // })
-  }
+  debugger;
+  return isSolved(grid)? grid: false;
 }
 function solver(grid, steps, actions, setLog) {
   const newLog = actions.slice();
@@ -170,7 +203,13 @@ function solver(grid, steps, actions, setLog) {
   }, newGrid);
   if(newGrid.every((cell, i) => grid[i].unchanged(cell))) {
     if(window.confirm("Couldn't deduce next step. Brute force?")) {
-      return brute(grid, steps, actions, setLog);
+      const bruteGrid = brute(grid, steps, actions, setLog);
+      console.log("done with brute force")
+      if(bruteGrid) {
+        return { newGrid: bruteGrid };
+      } else {
+        alert("Couldn't find a solution from this board state.");
+      }
     }
   } else {
     console.log(newGrid.filter((cell, i) => !grid[i].unchanged(cell)));
@@ -200,6 +239,7 @@ function App() {
             <button onClick={() => { setLog([]); setGrid(hardPuzzle(gridUtilities)) }}>Hard Puzzle</button>
             <button onClick={() => { setLog([]); setGrid(expertPuzzle(gridUtilities)) }}>Expert Puzzle</button>
             <button onClick={() => { setLog([]); setGrid(blankPuzzle(gridUtilities)) }}>Blank Puzzle</button>
+            <button onClick={() => { setLog([]); const newGrid = brute(grid); if (newGrid) setGrid(newGrid); else alert("Can't solve")}}>Brute Force</button>
             <button onClick={() => { const { newLog, newGrid } = solver(grid, 1, log, setLog); setGrid(newGrid); setLog(newLog); }}>Next Step (Hint)</button>
           </div>
           <LogTable cell={cell} setGrid={setGrid} grid={grid} log={log} />
