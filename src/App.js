@@ -7,7 +7,6 @@ import LogTable from './components/log-table';
 import './App.css';
 import { Board } from './components/Board';
 import { CellInspector } from './components/CellInspector';
-import {__uniqueOnAVector} from './strategy/unique-on-vector';
 
 function logEntry(cell, strategy, action, reason, grid) {
   return {
@@ -86,19 +85,19 @@ function isSolved(board) {
   let expected = [1, 2, 3, 4, 5, 6, 7, 8, 9]
   let valid = true
   // Check all rows
-  for (let r = 0; r < 9 && valid == true; r++) {
+  for (let r = 0; r < 9 && valid; r++) {
       if (!compare(expected, row(board, r).map(cell => cell.value) )) {
           valid = false
       }
   }
   // Check all columns
-  for (let c = 0; c < 9 && valid == true; c++) {
+  for (let c = 0; c < 9 && valid; c++) {
       if (!compare(expected, col(board, c).map(cell => cell.value))) {
           valid = false
       }
   }
   // Check all quadrants
-  for (let q = 1; q < 9 && valid == true; q++) {
+  for (let q = 1; q < 9 && valid; q++) {
       if (!compare(expected, block(board, q).map(cell => cell.value))) {
           valid = false
       }
@@ -129,8 +128,30 @@ function forPrintSort(a,b) {
   if(b.col < a.col) return 1;
   return 0;
 }
+function fixCandidates(grid) {
+  const newGrid = grid
+    .map(cell => Object.assign(
+      {},
+      { 
+        candidates: cell.value? 
+          [cell.value]: 
+          [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      }, cell))
+    .map((cell, ix, all) => {
+      [].concat(
+        without(row(all, cell.row), cell).map(cell => cell.value).filter(v => v),
+        without(col(all, cell.col), cell).map(cell => cell.value).filter(v => v),
+        without(block(all, cell.block), cell).map(c => c.value).filter(v => v)
+      ).filter(unique)
+      .forEach(inUse => cell.candidates = without(cell.candidates, inUse));
+      return cell;
+    });
+  return newGrid;
+}
 let attempts = 0;
 function brute(grid, steps, actions, setLog) {
+  let newGrid = grid.map(c => cellFactory(c));
+        
   attempts++;
   if(attempts % 1000 === 0) {
     const cells = (grid.sort(forPrintSort).map(cell => (cell.value || " ").toString()).join(""))
@@ -140,16 +161,16 @@ function brute(grid, steps, actions, setLog) {
     debugger;
   }
   for(let ixCell = 0; ixCell < grid.length; ixCell++) {
-    if(!grid[ixCell].value) {
+    if(!newGrid[ixCell].value) {
       const newCell = cellFactory(grid[ixCell]);
       const all = newCell.candidates;
       let candidate = 0;
       for(let i = 0; i < all.length; i++) {
-        const newGrid = grid.map(c => cellFactory(c));
         candidate = all[i];
         newCell.value = candidate; 
         newCell.candidates = [candidate];
         newGrid[ixCell] = newCell;
+        newGrid = fixCandidates(newGrid);
         // console.log(`setting (${newCell.row+1},${newCell.col+1}) to ${newCell.value}`);
         row(newGrid, newCell.row)
           .filter(c => !c.is(newCell))
@@ -179,8 +200,7 @@ function brute(grid, steps, actions, setLog) {
       }
     }
   }
-  debugger;
-  return isSolved(grid)? grid: false;
+  return isSolved(newGrid)? newGrid: false;
 }
 function solver(grid, steps, actions, setLog) {
   const newLog = actions.slice();
