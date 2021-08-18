@@ -1,5 +1,5 @@
 export default function logTable({ log, cell, grid, setGrid }) {
-    return <table>
+    return <table className="table">
         <thead>
           <tr>
             {!grid.includes(cell) && (

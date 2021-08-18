@@ -1,4 +1,4 @@
-import { dropCandidate, unique, cellFactory, row, col, block } from '../App';
+import { dropCandidate, row, col, block } from '../App';
 
 function eliminateCandidates(other, grid, cell, addLog) {
     if(!cell.value) return;

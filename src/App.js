@@ -7,6 +7,7 @@ import LogTable from './components/log-table';
 import './App.css';
 import { Board } from './components/Board';
 import { CellInspector } from './components/CellInspector';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const arrayOneToNine = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
@@ -123,13 +124,6 @@ const gridSort = (a, b) => {
     return 0;
   }
 }
-function forPrintSort(a,b) {
-  if(a.row < b.row) return -1;
-  if(b.row < a.row) return 1;
-  if(a.col < b.col) return -1;
-  if(b.col < a.col) return 1;
-  return 0;
-}
 function fixCandidates(grid) {
   const newGrid = grid
     .map(cell => Object.assign(
@@ -168,7 +162,6 @@ function brute(grid, start = 0, log) {
         newCell.value = candidate; 
         newCell.candidates = [candidate];
         newGrid[ixCell] = newCell;
-        if(newCell.value == 9 && newCell.row == 0 && newCell.col == 0) debugger;
         newGrid = fixCandidates(newGrid);
         log(newGrid, newCell, `Trying ${candidate}`, "Brute force");
         console.log(`setting (${newCell.row+1},${newCell.col+1}) to ${newCell.value}`);
@@ -255,26 +248,21 @@ function App() {
   const [log, setLog] = useState([]);
   const bruteForceLogger = (grid, cell, action, reason) => log.push(logEntry(cell, "Brute Force", action, reason, grid))
   return (
-    <div className="App">
-      <header className="App-header">
-        Sudoku Solver
-      </header>
-      <div style={{display:"flex", flexDirection: "row"}}>
-        <div style={{flex:"1"}}>
-          <Board grid={grid} setGrid={setGrid} setCell={setCell} log={log} setLog={setLog} />
+    <div className="row">
+      <div className="col">
+        <Board grid={grid} setGrid={setGrid} setCell={setCell} log={log} setLog={setLog} />
+      </div>
+      <div className="col">
+        <CellInspector grid={grid} setGrid={setGrid} cell={cell} setCell={setCell} log={log} setLog={setLog} />
+        <div className="actions">
+          <button onClick={() => { setLog([]); }}>Clear Log</button>
+          <button onClick={() => { setLog([]); setGrid(hardPuzzle(gridUtilities)) }}>Hard Puzzle</button>
+          <button onClick={() => { setLog([]); setGrid(expertPuzzle(gridUtilities)) }}>Expert Puzzle</button>
+          <button onClick={() => { setLog([]); setGrid(blankPuzzle(gridUtilities)) }}>Blank Puzzle</button>
+          <button onClick={() => { setLog([]); const newGrid = brute(grid, 0, bruteForceLogger); if (newGrid) { setGrid(newGrid); setLog(log.slice(0));  } else alert("Can't solve")}}>Brute Force</button>
+          <button onClick={() => { const { newLog, newGrid } = solver(grid, 1, log, setLog); setGrid(newGrid); setLog(newLog); }}>Next Step (Hint)</button>
         </div>
-        <div style={{flex:"1"}}>
-          <CellInspector grid={grid} setGrid={setGrid} cell={cell} setCell={setCell} log={log} setLog={setLog} />
-          <div className="actions">
-            <button onClick={() => { setLog([]); }}>Clear Log</button>
-            <button onClick={() => { setLog([]); setGrid(hardPuzzle(gridUtilities)) }}>Hard Puzzle</button>
-            <button onClick={() => { setLog([]); setGrid(expertPuzzle(gridUtilities)) }}>Expert Puzzle</button>
-            <button onClick={() => { setLog([]); setGrid(blankPuzzle(gridUtilities)) }}>Blank Puzzle</button>
-            <button onClick={() => { setLog([]); const newGrid = brute(grid, 0, bruteForceLogger); if (newGrid) { setGrid(newGrid); setLog(log.slice(0));  } else alert("Can't solve")}}>Brute Force</button>
-            <button onClick={() => { const { newLog, newGrid } = solver(grid, 1, log, setLog); setGrid(newGrid); setLog(newLog); }}>Next Step (Hint)</button>
-          </div>
-          <LogTable cell={cell} setGrid={setGrid} grid={grid} log={log} />
-        </div>
+        <LogTable cell={cell} setGrid={setGrid} grid={grid} log={log} />
       </div>
     </div>
   );
