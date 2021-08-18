@@ -23,7 +23,7 @@ export function Block({ number, grid, setGrid, setCell }) {
         if (value !== cell.value)
           setGrid(newGrid);
       };
-      cols.push(<Cell key={`${cell.block}-${cell.row}-${cell.col}`} data={cell} value={cell.value} candidates={cell.candidates} block={number} row={row} col={col} onChange={f} onFocus={() => setCell(cell)} />);
+      cols.push(<Cell key={`${cell.block}-${cell.row}-${cell.col}`} grid={grid} cell={cell} value={cell.value} candidates={cell.candidates} block={number} row={row} col={col} onChange={f} setGrid={setGrid} setCell={setCell} onFocus={() => setCell(cell)} />);
     }
     rows.push(cols);
   }

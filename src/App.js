@@ -248,23 +248,24 @@ function App() {
   const [log, setLog] = useState([]);
   const bruteForceLogger = (grid, cell, action, reason) => log.push(logEntry(cell, "Brute Force", action, reason, grid))
   return (
+    <>
+    <div className="actions">
+      <button onClick={() => { setLog([]); }}>Clear Log</button>
+      <button onClick={() => { setLog([]); setGrid(hardPuzzle(gridUtilities)) }}>Hard Puzzle</button>
+      <button onClick={() => { setLog([]); setGrid(expertPuzzle(gridUtilities)) }}>Expert Puzzle</button>
+      <button onClick={() => { setLog([]); setGrid(blankPuzzle(gridUtilities)) }}>Blank Puzzle</button>
+      <button onClick={() => { setLog([]); const newGrid = brute(grid, 0, bruteForceLogger); if (newGrid) { setGrid(newGrid); setLog(log.slice(0));  } else alert("Can't solve")}}>Brute Force</button>
+      <button onClick={() => { const { newLog, newGrid } = solver(grid, 1, log, setLog); setGrid(newGrid); setLog(newLog); }}>Next Step (Hint)</button>
+    </div>
     <div className="row">
       <div className="col">
         <Board grid={grid} setGrid={setGrid} setCell={setCell} log={log} setLog={setLog} />
       </div>
       <div className="col">
-        <CellInspector grid={grid} setGrid={setGrid} cell={cell} setCell={setCell} log={log} setLog={setLog} />
-        <div className="actions">
-          <button onClick={() => { setLog([]); }}>Clear Log</button>
-          <button onClick={() => { setLog([]); setGrid(hardPuzzle(gridUtilities)) }}>Hard Puzzle</button>
-          <button onClick={() => { setLog([]); setGrid(expertPuzzle(gridUtilities)) }}>Expert Puzzle</button>
-          <button onClick={() => { setLog([]); setGrid(blankPuzzle(gridUtilities)) }}>Blank Puzzle</button>
-          <button onClick={() => { setLog([]); const newGrid = brute(grid, 0, bruteForceLogger); if (newGrid) { setGrid(newGrid); setLog(log.slice(0));  } else alert("Can't solve")}}>Brute Force</button>
-          <button onClick={() => { const { newLog, newGrid } = solver(grid, 1, log, setLog); setGrid(newGrid); setLog(newLog); }}>Next Step (Hint)</button>
-        </div>
         <LogTable cell={cell} setGrid={setGrid} grid={grid} log={log} />
       </div>
     </div>
+    </>
   );
 }
 

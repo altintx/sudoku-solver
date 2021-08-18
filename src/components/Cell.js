@@ -1,4 +1,16 @@
-export function Cell({ value, candidates, onChange, onFocus, }) {
+import { Popover, OverlayTrigger } from 'react-bootstrap';
+import {CellInspector} from './CellInspector';
+
+const popover = (grid, cell, setCell, setGrid) => (
+  <Popover>
+    <Popover.Header as="h3">Candidates</Popover.Header>
+    <Popover.Body>
+      <CellInspector grid={grid} setGrid={setGrid} cell={cell} setCell={setCell}/>
+    </Popover.Body>
+  </Popover>
+);
+
+export function Cell({ value, candidates, onChange, onFocus, cell, grid, setCell, setGrid }) {
   const classes = {
     1: "blue",
     2: "green",
@@ -11,5 +23,7 @@ export function Cell({ value, candidates, onChange, onFocus, }) {
     9: "white",
     0: "red"
   };
-  return <div className={classes[candidates.length] + " cell"}><input value={value} onChange={onChange} onFocus={onFocus} onClick={({target}) => target.select()} /></div>;
+  return <OverlayTrigger trigger="click" placement="right" overlay={popover(grid, cell, setCell, setGrid)} rootClose>
+    <div className={classes[candidates.length] + " cell"}><input value={value} onChange={onChange} onFocus={onFocus} onClick={({target}) => target.select()} /></div>
+  </OverlayTrigger>
 }

@@ -27,17 +27,14 @@
 
 .grid > .cell {
   border: 1px solid black;
-  width: 3em;
-  height: 3em;
 }
 
 .grid input {
   border-width: 0;
   outline: none;
   width: 2em;
-  text-align: left;
+  text-align: center;
   font-size: 2em;
-  padding-left: 0.5em;
 }
 
 .green {
