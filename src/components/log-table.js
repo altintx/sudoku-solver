@@ -6,7 +6,7 @@ export default function logTable({ log, cell, grid, setGrid }) {
               <><th>Row</th>
               <th>Col</th></>
             )}
-            <th>Detective</th>
+            <th>Strategy</th>
             <th>Action</th>
             <th>Reason</th>
             <th></th>

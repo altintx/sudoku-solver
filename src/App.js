@@ -155,7 +155,7 @@ function fixCandidates(grid) {
     });
   return newGrid;
 }
-function brute(grid, start = 0) {
+function brute(grid, start = 0, log) {
   let newGrid = grid.map(c => cellFactory(c)); // make a copy of grid
         
   for(let ixCell = start; ixCell < grid.length; ixCell++) {
@@ -170,23 +170,25 @@ function brute(grid, start = 0) {
         newGrid[ixCell] = newCell;
         if(newCell.value == 9 && newCell.row == 0 && newCell.col == 0) debugger;
         newGrid = fixCandidates(newGrid);
+        log(newGrid, newCell, `Trying ${candidate}`, "Brute force");
         console.log(`setting (${newCell.row+1},${newCell.col+1}) to ${newCell.value}`);
         if(newGrid.every(cell => cell.candidates.length > 0)) {  // if every cell has possibilities
           if(newGrid.every(cell => cell.value)) { // if every cell has a value
             if (isSolved(newGrid)) { // if every value works
               return newGrid; // found it
             } else {
+              log(newGrid, newCell, `Invalid number ${candidate}`, "Backtrack");
               return false; // backtrack
             }
           } else {
             // flush out additional cells
-            const try2 = brute(newGrid, ixCell + 1);
+            const try2 = brute(newGrid, ixCell + 1, log);
             if(try2) {
               return try2;
             } else {
               if(i + 1 === all.length) {
                 // a previous cell must have been bad, backtrack
-                console.log(`Backtracking solving (${newCell.row+1},${newCell.col+1}) because all candidates from this cell have failed`);
+                log(newGrid, newCell, `Invalid number ${candidate}`, "Backtrack");
                 return false;
               } else {
                 // additional candidates on this cell
@@ -196,7 +198,7 @@ function brute(grid, start = 0) {
         } else {
           if(i + 1 === all.length) {
             // impossible puzzle, backtrack
-            console.log(`Backtracking solving (${newCell.row+1},${newCell.col+1}) because all candidates from this cell have failed`);
+            log(newGrid, newCell, `Invalid number ${candidate}`, "Backtrack");
             return false;
           } else {
             // additional candidates on this cell
@@ -228,8 +230,11 @@ function solver(grid, steps, actions, setLog) {
   }, newGrid);
   if(newGrid.every((cell, i) => grid[i].unchanged(cell))) {
     if(window.confirm("Couldn't deduce next step. Brute force?")) {
-      const bruteGrid = brute(grid, 0, steps, actions, setLog);
-      console.log("done with brute force")
+      const bruteGrid = brute(
+        grid,
+        0, 
+        (grid, cell, action, reason) => newLog.push(logEntry(cell, "Brute Force", action, reason, grid))
+      );
       if(bruteGrid) {
         return { newGrid: bruteGrid, newLog: newLog };
       } else {
@@ -248,6 +253,7 @@ function App() {
   const [grid, setGrid] = useState(expertPuzzle(gridUtilities))
   const [cell, setCell] = useState(null);
   const [log, setLog] = useState([]);
+  const bruteForceLogger = (grid, cell, action, reason) => log.push(logEntry(cell, "Brute Force", action, reason, grid))
   return (
     <div className="App">
       <header className="App-header">
@@ -264,7 +270,7 @@ function App() {
             <button onClick={() => { setLog([]); setGrid(hardPuzzle(gridUtilities)) }}>Hard Puzzle</button>
             <button onClick={() => { setLog([]); setGrid(expertPuzzle(gridUtilities)) }}>Expert Puzzle</button>
             <button onClick={() => { setLog([]); setGrid(blankPuzzle(gridUtilities)) }}>Blank Puzzle</button>
-            <button onClick={() => { setLog([]); const newGrid = brute(grid, 0); if (newGrid) setGrid(newGrid); else alert("Can't solve")}}>Brute Force</button>
+            <button onClick={() => { setLog([]); const newGrid = brute(grid, 0, bruteForceLogger); if (newGrid) { setGrid(newGrid); setLog(log.slice(0));  } else alert("Can't solve")}}>Brute Force</button>
             <button onClick={() => { const { newLog, newGrid } = solver(grid, 1, log, setLog); setGrid(newGrid); setLog(newLog); }}>Next Step (Hint)</button>
           </div>
           <LogTable cell={cell} setGrid={setGrid} grid={grid} log={log} />
