@@ -1,3 +1,4 @@
+import React, { useRef } from 'react';
 import { Popover, OverlayTrigger } from 'react-bootstrap';
 import {CellInspector} from './CellInspector';
 
@@ -10,7 +11,7 @@ const popover = (grid, cell, setCell, setGrid) => (
   </Popover>
 );
 
-export function Cell({ value, candidates, onChange, onFocus, cell, grid, setCell, setGrid }) {
+export function Cell({ value, candidates, onChange, onFocus, cell, grid, setCell, setGrid, focusedCell }) {
   const classes = {
     1: "blue",
     2: "green",
@@ -23,7 +24,13 @@ export function Cell({ value, candidates, onChange, onFocus, cell, grid, setCell
     9: "white",
     0: "red"
   };
-  return <OverlayTrigger trigger="click" placement="right" overlay={popover(grid, cell, setCell, setGrid)} rootClose>
-    <div className={classes[candidates.length] + " cell"}><input value={value} onChange={onChange} onFocus={onFocus} onClick={({target}) => target.select()} /></div>
-  </OverlayTrigger>
+  if (focusedCell && cell.is(focusedCell)) {
+    return <OverlayTrigger trigger="click" placement="right" overlay={popover(grid, cell, setCell, setGrid)} rootClose>
+      <div className={classes[candidates.length] + " cell"}><input autoFocus value={value} onChange={onChange} onFocus={onFocus} onClick={({target}) => target.select()} /></div>
+    </OverlayTrigger>
+  } else {
+    return (
+      <div className={classes[candidates.length] + " cell"}><input value={value} onChange={onChange} onFocus={onFocus} onClick={({target}) => target.select()} /></div>
+    )
+  }
 }

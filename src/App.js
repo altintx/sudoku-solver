@@ -6,7 +6,6 @@ import blankPuzzle from './puzzles/blank';
 import LogTable from './components/log-table';
 import './App.css';
 import { Board } from './components/Board';
-import { CellInspector } from './components/CellInspector';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const arrayOneToNine = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -234,8 +233,6 @@ function solver(grid, steps, actions, setLog) {
         alert("Couldn't find a solution from this board state.");
       }
     }
-  } else {
-    console.log(newGrid.filter((cell, i) => !grid[i].unchanged(cell)));
   }
   return { newGrid, newLog };
 }
@@ -259,7 +256,7 @@ function App() {
     </div>
     <div className="row">
       <div className="col">
-        <Board grid={grid} setGrid={setGrid} setCell={setCell} log={log} setLog={setLog} />
+        <Board grid={grid} setGrid={setGrid} setCell={setCell} log={log} setLog={setLog} focusedCell={cell} />
       </div>
       <div className="col">
         <LogTable cell={cell} setGrid={setGrid} grid={grid} log={log} />
